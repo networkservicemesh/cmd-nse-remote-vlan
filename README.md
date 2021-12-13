@@ -1,6 +1,25 @@
-# Build
+#
 
-## Build cmd binary locally
+## Intro
+
+This repo contains 'nse-remote-vlan' an NSE application for Network Service Mesh. It provides ipam and vlan configuration context for registered Network Services.
+
+## Usage
+
+`nse-remote-vlan` accept following environment variables:
+
+* NSM_NAME                  Name of the endpoint
+* NSM_CONNECT_TO            An URL of registry service to connect to
+* NSM_MAX_TOKEN_LIFETIME    Maximum lifetime of tokens
+* NSM_CIDR_PREFIX           CIDR Prefix to assign IPs from
+* NSM_IPV6_PREFIX           Ipv6 Prefix for dual-stack
+* NSM_REGISTER_SERVICE      if true then registers network service on startup
+* NSM_LISTEN_ON             tcp:// url to be listen on. It will be used as public to register NSM
+* NSM_SERVICES              List of supported services
+
+## Build
+
+### Build cmd binary locally
 
 You can build the locally by executing
 
@@ -8,7 +27,7 @@ You can build the locally by executing
 go build ./...
 ```
 
-## Build Docker container
+### Build Docker container
 
 You can build the docker container by running:
 
@@ -16,9 +35,9 @@ You can build the docker container by running:
 docker build .
 ```
 
-# Testing
+## Testing
 
-## Testing Docker container
+### Testing Docker container
 
 Testing is run via a Docker container.  To run testing run:
 
@@ -26,9 +45,10 @@ Testing is run via a Docker container.  To run testing run:
 docker run --privileged --rm $(docker build -q --target test .)
 ```
 
-# Debugging
+## Debugging
 
-## Debugging the tests
+### Debugging the tests
+
 If you wish to debug the test code itself, that can be acheived by running:
 
 ```bash
@@ -40,6 +60,7 @@ This will result in the tests running under dlv.  Connecting your debugger to lo
 ```bash
 -p 40000:40000
 ```
+
 forwards port 40000 in the container to localhost:40000 where you can attach with your debugger.
 
 ```bash
@@ -48,13 +69,14 @@ forwards port 40000 in the container to localhost:40000 where you can attach wit
 
 Runs the debug target, which is just like the test target, but starts tests with dlv listening on port 40000 inside the container.
 
-## Debugging the cmd
+### Debugging the cmd
 
 When you run 'cmd' you will see an early line of output that tells you:
 
 ```Setting env variable DLV_LISTEN_FORWARDER to a valid dlv '--listen' value will cause the dlv debugger to execute this binary and listen as directed.```
 
 If you follow those instructions when running the Docker container:
+
 ```bash
 docker run --privileged -e DLV_LISTEN_FORWARDER=:50000 -p 50000:50000 --rm $(docker build -q --target test .)
 ```
@@ -65,7 +87,7 @@ dlv to listen on port 50000.
 ```-p 50000:50000``` tells docker to forward port 50000 in the container to port 50000 in the host.  From there, you can
 just connect dlv using your favorite IDE and debug cmd.
 
-## Debugging the tests and the cmd
+### Debugging the tests and the cmd
 
 ```bash
 docker run --privileged -e DLV_LISTEN_FORWARDER=:50000 -p 40000:40000 -p 50000:50000 --rm $(docker build -q --target debug .)
