@@ -1,5 +1,5 @@
-// Copyright (c) 2021 Doc.ai and/or its affiliates.
-// Copyright (c) 2021 Nordix and/or its affiliates.
+// Copyright (c) 2021-2022 Doc.ai and/or its affiliates.
+// Copyright (c) 2021-2022 Nordix and/or its affiliates.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !windows
 // +build !windows
 
 package main
@@ -29,12 +30,12 @@ import (
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/edwarnicke/grpcfd"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/networkservicemesh/api/pkg/api/networkservice"
 	vlanmech "github.com/networkservicemesh/api/pkg/api/networkservice/mechanisms/vlan"
@@ -50,11 +51,11 @@ import (
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
 	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
-	"github.com/networkservicemesh/sdk/pkg/tools/jaeger"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
-	"github.com/networkservicemesh/sdk/pkg/tools/opentracing"
+	"github.com/networkservicemesh/sdk/pkg/tools/opentelemetry"
 	"github.com/networkservicemesh/sdk/pkg/tools/spiffejwt"
+	"github.com/networkservicemesh/sdk/pkg/tools/tracing"
 
 	"github.com/networkservicemesh/cmd-nse-remote-vlan/internal/pkg/config"
 	"github.com/networkservicemesh/cmd-nse-remote-vlan/internal/pkg/networkservice/vlanmapserver"
@@ -70,6 +71,7 @@ func main() {
 	// ********************************************************************************
 	// setup logging
 	// ********************************************************************************
+	log.EnableTracing(true)
 	logrus.SetFormatter(&nested.Formatter{})
 	ctx = log.WithLog(ctx, logruslogger.New(ctx, map[string]interface{}{"cmd": os.Args[0]}))
 
@@ -77,13 +79,6 @@ func main() {
 		log.FromContext(ctx).Infof("%s", err)
 	}
 	logger := log.FromContext(ctx)
-
-	// ********************************************************************************
-	// Configure open tracing
-	// ********************************************************************************
-	log.EnableTracing(true)
-	jaegerCloser := jaeger.InitJaeger(ctx, "cmd-nse-remote-vlan")
-	defer func() { _ = jaegerCloser.Close() }()
 
 	// enumerating phases
 	logger.Infof("there are 6 phases which will be executed followed by a success message:")
@@ -106,6 +101,21 @@ func main() {
 	}
 
 	log.FromContext(ctx).Infof("Config: %#v", cfg)
+
+	// ********************************************************************************
+	// Configure Open Telemetry
+	// ********************************************************************************
+	if opentelemetry.IsEnabled() {
+		collectorAddress := cfg.OpenTelemetryEndpoint
+		spanExporter := opentelemetry.InitSpanExporter(ctx, collectorAddress)
+		metricExporter := opentelemetry.InitMetricExporter(ctx, collectorAddress)
+		o := opentelemetry.Init(ctx, spanExporter, metricExporter, cfg.Name)
+		defer func() {
+			if err := o.Close(); err != nil {
+				log.FromContext(ctx).Error(err.Error())
+			}
+		}()
+	}
 
 	// ********************************************************************************
 	logger.Infof("executing phase 2: retrieving svid, check spire agent logs if this is the last line you see")
@@ -170,7 +180,7 @@ func main() {
 	)
 
 	options := append(
-		opentracing.WithTracing(),
+		tracing.WithTracing(),
 		serverCreds)
 	server := grpc.NewServer(options...)
 	responderEndpoint.Register(server)
@@ -186,7 +196,7 @@ func main() {
 	// ********************************************************************************
 
 	clientOptions := append(
-		opentracing.WithTracingDial(),
+		tracing.WithTracingDial(),
 		grpc.WithBlock(),
 		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
 		grpc.WithTransportCredentials(
@@ -264,7 +274,7 @@ func getPublicURL(u *url.URL) string {
 }
 
 func getNseEndpoint(listenOn *url.URL, cfg *config.Config) *registryapi.NetworkServiceEndpoint {
-	expireTime, _ := ptypes.TimestampProto(time.Now().Add(cfg.MaxTokenLifetime))
+	expireTime := timestamppb.New(time.Now().Add(cfg.MaxTokenLifetime))
 
 	nse := &registryapi.NetworkServiceEndpoint{
 		Name:                 cfg.Name,
