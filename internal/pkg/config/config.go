@@ -41,8 +41,7 @@ type Config struct {
 	Name                  string          `default:"vlan-server" desc:"Name of the endpoint"`
 	ConnectTo             url.URL         `default:"nsm-registry-svc:5002" desc:"url of registry service to connect to" split_words:"true"`
 	MaxTokenLifetime      time.Duration   `default:"24h" desc:"maximum lifetime of tokens" split_words:"true"`
-	CidrPrefix            string          `default:"169.254.0.0/16" desc:"CIDR Prefix to assign IPs from" split_words:"true"`
-	Ipv6Prefix            string          `default:"" desc:"Ipv6 Prefix for dual-stack" split_words:"true"`
+	CidrPrefix            []string        `default:"169.254.0.0/16" desc:"CIDR Prefix to assign IPs (IPv4 and/or IPv6) from" split_words:"true"`
 	RegisterService       bool            `default:"true" desc:"if true then registers network service on startup" split_words:"true"`
 	ListenOn              url.URL         `default:"tcp://:5003" desc:"tcp:// url to be listen on. It will be used as public to register NSM" split_words:"true"`
 	OpenTelemetryEndpoint string          `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
