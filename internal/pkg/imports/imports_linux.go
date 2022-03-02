@@ -40,8 +40,10 @@ import (
 	_ "net"
 	_ "net/url"
 	_ "os"
+	_ "os/signal"
 	_ "strconv"
 	_ "strings"
+	_ "syscall"
 	_ "testing"
 	_ "time"
 )

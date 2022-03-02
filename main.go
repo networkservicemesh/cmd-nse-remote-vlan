@@ -26,6 +26,8 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
@@ -66,9 +68,14 @@ func main() {
 	// ********************************************************************************
 	// setup context to catch signals
 	// ********************************************************************************
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		// More Linux signals here
+		syscall.SIGHUP,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
 	// ********************************************************************************
 	// setup logging
 	// ********************************************************************************
@@ -101,7 +108,13 @@ func main() {
 		logrus.Fatal(err.Error())
 	}
 
-	log.FromContext(ctx).Infof("Config: %#v", cfg)
+	l, errLog := logrus.ParseLevel(cfg.LogLevel)
+	if errLog != nil {
+		logrus.Fatalf("invalid log level %s", cfg.LogLevel)
+	}
+	logrus.SetLevel(l)
+
+	logger.Infof("Config: %#v", cfg)
 
 	// ********************************************************************************
 	// Configure Open Telemetry
