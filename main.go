@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -148,25 +149,10 @@ func main() {
 	log.FromContext(ctx).Infof("executing phase 3: parsing network prefixes for ipam")
 	// ********************************************************************************
 
-	_, ipNet1, err := net.ParseCIDR(cfg.CidrPrefix)
-	if err != nil {
-		logrus.Fatalf("Could not parse cidr %s; %+v", cfg.CidrPrefix, err)
-	}
+	ipamChain := getIPAMChain(ctx, cfg.CidrPrefix)
 
-	var ipamChain networkservice.NetworkServiceServer
+	log.FromContext(ctx).Infof("network prefixes parsed successfully")
 
-	if cfg.Ipv6Prefix != "" {
-		_, ipNet2, parseErr := net.ParseCIDR(cfg.Ipv6Prefix)
-		if parseErr != nil {
-			log.FromContext(ctx).Fatalf("error parsing cidr: %+v", err)
-		}
-		ipamChain = chain.NewNetworkServiceServer(
-			singlepointipam.NewServer(ipNet1),
-			singlepointipam.NewServer(ipNet2),
-		)
-	} else {
-		ipamChain = chain.NewNetworkServiceServer(singlepointipam.NewServer(ipNet1))
-	}
 	// ********************************************************************************
 	logger.Infof("executing phase 4: create network service endpoint")
 	// ********************************************************************************
@@ -318,4 +304,17 @@ func getNseEndpoint(listenOn *url.URL, cfg *config.Config) *registryapi.NetworkS
 		}
 	}
 	return nse
+}
+
+func getIPAMChain(ctx context.Context, cIDRs []string) networkservice.NetworkServiceServer {
+	var ipamchain []networkservice.NetworkServiceServer
+	for _, cidr := range cIDRs {
+		var parseErr error
+		_, ipNet, parseErr := net.ParseCIDR(strings.TrimSpace(cidr))
+		if parseErr != nil {
+			log.FromContext(ctx).Fatalf("Could not parse CIDR %s; %+v", cidr, parseErr)
+		}
+		ipamchain = append(ipamchain, singlepointipam.NewServer(ipNet))
+	}
+	return chain.NewNetworkServiceServer(ipamchain...)
 }
