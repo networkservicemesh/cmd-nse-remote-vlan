@@ -22,7 +22,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -55,6 +54,7 @@ import (
 	registrysendfd "github.com/networkservicemesh/sdk/pkg/registry/common/sendfd"
 	"github.com/networkservicemesh/sdk/pkg/tools/debug"
 	"github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
+	"github.com/networkservicemesh/sdk/pkg/tools/listenonurl"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
 	"github.com/networkservicemesh/sdk/pkg/tools/opentelemetry"
@@ -232,7 +232,7 @@ func main() {
 			registrysendfd.NewNetworkServiceEndpointRegistryClient(),
 		),
 	)
-	nse := getNseEndpoint(listenOn, cfg)
+	nse := getNseEndpoint(listenOn, cfg, logger)
 
 	nse, err = nseRegistryClient.Register(ctx, nse)
 	logrus.Infof("nse: %+v", nse)
@@ -263,33 +263,15 @@ func exitOnErr(ctx context.Context, cancel context.CancelFunc, errCh <-chan erro
 	}(ctx, errCh)
 }
 
-func getPublicURL(u *url.URL) string {
-	if u.Port() == "" || len(u.Host) != len(":")+len(u.Port()) {
-		return u.String()
-	}
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		logrus.Warn(err.Error())
-		return u.String()
-	}
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return fmt.Sprintf("tcp://%v:%v", ipnet.IP.String(), u.Port())
-			}
-		}
-	}
-	return u.String()
-}
-
-func getNseEndpoint(listenOn *url.URL, cfg *config.Config) *registryapi.NetworkServiceEndpoint {
+func getNseEndpoint(listenOn *url.URL, cfg *config.Config, logger log.Logger) *registryapi.NetworkServiceEndpoint {
 	expireTime := timestamppb.New(time.Now().Add(cfg.MaxTokenLifetime))
 
+	pubURL := genPublishableURL(listenOn, logger)
 	nse := &registryapi.NetworkServiceEndpoint{
 		Name:                 cfg.Name,
 		NetworkServiceNames:  make([]string, len(cfg.Services)),
 		NetworkServiceLabels: make(map[string]*registryapi.NetworkServiceLabels, len(cfg.Services)),
-		Url:                  getPublicURL(listenOn),
+		Url:                  pubURL.String(),
 		ExpirationTime:       expireTime,
 	}
 
@@ -306,6 +288,14 @@ func getNseEndpoint(listenOn *url.URL, cfg *config.Config) *registryapi.NetworkS
 		}
 	}
 	return nse
+}
+func genPublishableURL(listenOn *url.URL, logger log.Logger) *url.URL {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		logger.Warn(err.Error())
+		return listenOn
+	}
+	return listenonurl.GetPublicURL(addrs, listenOn)
 }
 
 func getIPAMChain(ctx context.Context, cIDRs []string) networkservice.NetworkServiceServer {
