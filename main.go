@@ -209,7 +209,9 @@ func main() {
 	)
 
 	if cfg.RegisterService {
-		nsRegistryClient := registryclient.NewNetworkServiceRegistryClient(ctx, &cfg.ConnectTo, registryclient.WithDialOptions(clientOptions...))
+		nsRegistryClient := registryclient.NewNetworkServiceRegistryClient(ctx,
+			registryclient.WithClientURL(&cfg.ConnectTo),
+			registryclient.WithDialOptions(clientOptions...))
 		for i := range cfg.Services {
 			nsName := cfg.Services[i].Name
 			nsPayload := payload.Ethernet
@@ -224,7 +226,7 @@ func main() {
 
 	nseRegistryClient := registryclient.NewNetworkServiceEndpointRegistryClient(
 		ctx,
-		&cfg.ConnectTo,
+		registryclient.WithClientURL(&cfg.ConnectTo),
 		registryclient.WithDialOptions(clientOptions...),
 		registryclient.WithNSEAdditionalFunctionality(
 			registrysendfd.NewNetworkServiceEndpointRegistryClient(),
