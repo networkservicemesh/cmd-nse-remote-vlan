@@ -3,7 +3,6 @@ package imports
 
 import (
 	_ "context"
-	_ "fmt"
 	_ "github.com/antonfisher/nested-logrus-formatter"
 	_ "github.com/edwarnicke/grpcfd"
 	_ "github.com/golang/protobuf/ptypes/empty"
@@ -24,6 +23,7 @@ import (
 	_ "github.com/networkservicemesh/sdk/pkg/registry/common/sendfd"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/debug"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
+	_ "github.com/networkservicemesh/sdk/pkg/tools/listenonurl"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/log"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/opentelemetry"
