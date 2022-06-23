@@ -21,6 +21,7 @@ import (
 	_ "github.com/networkservicemesh/sdk/pkg/networkservice/core/next"
 	_ "github.com/networkservicemesh/sdk/pkg/networkservice/ipam/singlepointipam"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
+	_ "github.com/networkservicemesh/sdk/pkg/registry/common/clientinfo"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/common/sendfd"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/debug"
 	_ "github.com/networkservicemesh/sdk/pkg/tools/grpcutils"
