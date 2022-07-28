@@ -58,8 +58,10 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/tools/listenonurl"
 	"github.com/networkservicemesh/sdk/pkg/tools/log"
 	"github.com/networkservicemesh/sdk/pkg/tools/log/logruslogger"
+	authmonitor "github.com/networkservicemesh/sdk/pkg/tools/monitorconnection/authorize"
 	"github.com/networkservicemesh/sdk/pkg/tools/opentelemetry"
 	"github.com/networkservicemesh/sdk/pkg/tools/spiffejwt"
+	"github.com/networkservicemesh/sdk/pkg/tools/spire"
 	"github.com/networkservicemesh/sdk/pkg/tools/tracing"
 
 	"github.com/networkservicemesh/cmd-nse-remote-vlan/internal/pkg/config"
@@ -162,10 +164,12 @@ func main() {
 	// ********************************************************************************
 	logger.Infof("executing phase 4: create network service endpoint")
 	// ********************************************************************************
+	spiffeIDConnMap := spire.SpiffeIDConnectionMap{}
 	responderEndpoint := endpoint.NewServer(ctx,
 		spiffejwt.TokenGeneratorFunc(source, cfg.MaxTokenLifetime),
 		endpoint.WithName(cfg.Name),
-		endpoint.WithAuthorizeServer(authorize.NewServer()),
+		endpoint.WithAuthorizeServer(authorize.NewServer(authorize.WithSpiffeIDConnectionMap(&spiffeIDConnMap))),
+		endpoint.WithAuthorizeMonitorConnectionServer(authmonitor.NewMonitorConnectionServer(authmonitor.WithSpiffeIDConnectionMap(&spiffeIDConnMap))),
 		endpoint.WithAdditionalFunctionality(
 			ipamChain,
 			recvfd.NewServer(),
