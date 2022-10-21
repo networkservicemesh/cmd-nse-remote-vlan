@@ -32,6 +32,7 @@ const (
 	labelsPrefix = "labels:"
 	viaPrefix    = "via:"
 	domainPrefix = "domain:"
+	mtuPrefix    = "mtu:"
 
 	tcpSchema = "tcp"
 )
@@ -74,8 +75,9 @@ type ServiceConfig struct {
 	Name    string
 	Domain  string
 	Via     string
-	VLANTag int32
+	VLANTag uint32
 	Labels  map[string]string
+	MTU     uint32
 }
 
 // InitValues set initial values for ServiceConfig
@@ -83,6 +85,7 @@ func (s *ServiceConfig) InitValues() {
 	s.Domain = ""
 	s.VLANTag = 0
 	s.Via = ""
+	s.MTU = 0
 }
 
 // UnmarshalBinary expects string(bytes) to be in format:
@@ -102,13 +105,15 @@ func (s *ServiceConfig) UnmarshalBinary(bytes []byte) (err error) {
 		part = strings.TrimSpace(part)
 		switch {
 		case strings.HasPrefix(part, vlanPrefix):
-			s.VLANTag, err = parseInt32(trimPrefix(part, vlanPrefix))
+			s.VLANTag, err = parseUInt32(trimPrefix(part, vlanPrefix))
 		case strings.HasPrefix(part, labelsPrefix):
 			s.Labels, err = parseMap(trimPrefix(part, labelsPrefix))
 		case strings.HasPrefix(part, viaPrefix):
 			s.Via = trimPrefix(part, viaPrefix)
 		case strings.HasPrefix(part, domainPrefix):
 			s.Domain = trimPrefix(part, domainPrefix)
+		case strings.HasPrefix(part, mtuPrefix):
+			s.MTU, err = parseUInt32(trimPrefix(part, mtuPrefix))
 		default:
 			err = errors.Errorf("invalid format: %s", text)
 		}
@@ -124,12 +129,12 @@ func trimPrefix(s, prefix string) string {
 	return strings.TrimSpace(s)
 }
 
-func parseInt32(s string) (int32, error) {
-	i, err := strconv.ParseInt(s, 0, 32)
+func parseUInt32(s string) (uint32, error) {
+	i, err := strconv.ParseUint(s, 0, 32)
 	if err != nil {
 		return 0, err
 	}
-	return int32(i), nil
+	return uint32(i), nil
 }
 
 func parseMap(s string) (map[string]string, error) {
@@ -151,8 +156,11 @@ func (s *ServiceConfig) validate() error {
 	if s.Via == "" {
 		return errors.New("via is empty")
 	}
-	if s.VLANTag < 0 || s.VLANTag > 4095 {
+	if s.VLANTag > 4095 {
 		return errors.New("Invalid VLAN ID")
+	}
+	if s.MTU > 0 && (s.MTU < 68 || s.MTU > 65535) {
+		return errors.New("Invalid MTU")
 	}
 	return nil
 }
