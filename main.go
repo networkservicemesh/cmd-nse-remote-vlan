@@ -26,7 +26,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -157,7 +156,7 @@ func main() {
 	log.FromContext(ctx).Infof("executing phase 3: parsing network prefixes for ipam")
 	// ********************************************************************************
 
-	ipamChain := getIPAMChain(ctx, cfg.CidrPrefix)
+	ipamChain := getIPAMChain(cfg.CidrPrefix)
 
 	log.FromContext(ctx).Infof("network prefixes parsed successfully")
 
@@ -315,15 +314,11 @@ func genPublishableURL(listenOn *url.URL, logger log.Logger) *url.URL {
 	return listenonurl.GetPublicURL(addrs, listenOn)
 }
 
-func getIPAMChain(ctx context.Context, cIDRs []string) networkservice.NetworkServiceServer {
+func getIPAMChain(cIDRs []string) networkservice.NetworkServiceServer {
 	var ipamchain []networkservice.NetworkServiceServer
-	for _, cidr := range cIDRs {
-		var parseErr error
-		_, ipNet, parseErr := net.ParseCIDR(strings.TrimSpace(cidr))
-		if parseErr != nil {
-			log.FromContext(ctx).Fatalf("Could not parse CIDR %s; %+v", cidr, parseErr)
-		}
-		ipamchain = append(ipamchain, singlepointipam.NewServer(ipNet))
+	ipamNets, _ := config.ParseCidr(cIDRs)
+	for _, ipamNet := range ipamNets {
+		ipamchain = append(ipamchain, singlepointipam.NewServer(ipamNet))
 	}
 	return chain.NewNetworkServiceServer(ipamchain...)
 }
