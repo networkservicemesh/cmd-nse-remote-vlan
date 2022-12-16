@@ -224,7 +224,8 @@ func main() {
 		nsRegistryClient := registryclient.NewNetworkServiceRegistryClient(ctx,
 			registryclient.WithClientURL(&cfg.ConnectTo),
 			registryclient.WithDialOptions(clientOptions...),
-			registryclient.WithAuthorizeNSRegistryClient(registryauthorize.NewNetworkServiceRegistryClient()))
+			registryclient.WithAuthorizeNSRegistryClient(registryauthorize.NewNetworkServiceRegistryClient(
+				registryauthorize.WithPolicies(cfg.RegistryClientPolicies...))))
 		for i := range cfg.Services {
 			nsName := cfg.Services[i].Name
 			nsPayload := payload.Ethernet
@@ -245,7 +246,8 @@ func main() {
 			clientinfo.NewNetworkServiceEndpointRegistryClient(),
 			registrysendfd.NewNetworkServiceEndpointRegistryClient(),
 		),
-		registryclient.WithAuthorizeNSERegistryClient(registryauthorize.NewNetworkServiceEndpointRegistryClient()),
+		registryclient.WithAuthorizeNSERegistryClient(registryauthorize.NewNetworkServiceEndpointRegistryClient(
+			registryauthorize.WithPolicies(cfg.RegistryClientPolicies...))),
 	)
 	nse := getNseEndpoint(listenOn, cfg, logger)
 
