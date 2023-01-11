@@ -19,6 +19,7 @@ import (
 	_ "github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/sendfd"
 	_ "github.com/networkservicemesh/sdk/pkg/networkservice/core/next"
 	_ "github.com/networkservicemesh/sdk/pkg/networkservice/ipam/groupipam"
+	_ "github.com/networkservicemesh/sdk/pkg/networkservice/ipam/singlepointipam"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/common/authorize"
 	_ "github.com/networkservicemesh/sdk/pkg/registry/common/clientinfo"
