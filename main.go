@@ -1,5 +1,5 @@
-// Copyright (c) 2021-2022 Doc.ai and/or its affiliates.
-// Copyright (c) 2021-2022 Nordix and/or its affiliates.
+// Copyright (c) 2021-2023 Doc.ai and/or its affiliates.
+// Copyright (c) 2021-2023 Nordix and/or its affiliates.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,7 +26,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -48,8 +47,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/recvfd"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/sendfd"
-	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
-	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/singlepointipam"
+	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/groupipam"
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	registryauthorize "github.com/networkservicemesh/sdk/pkg/registry/common/authorize"
 	"github.com/networkservicemesh/sdk/pkg/registry/common/clientinfo"
@@ -157,7 +155,7 @@ func main() {
 	log.FromContext(ctx).Infof("executing phase 3: parsing network prefixes for ipam")
 	// ********************************************************************************
 
-	ipamChain := getIPAMChain(ctx, cfg.CidrPrefix)
+	ipamChain := groupipam.NewServer(cfg.CidrPrefix)
 
 	log.FromContext(ctx).Infof("network prefixes parsed successfully")
 
@@ -313,17 +311,4 @@ func genPublishableURL(listenOn *url.URL, logger log.Logger) *url.URL {
 		return listenOn
 	}
 	return listenonurl.GetPublicURL(addrs, listenOn)
-}
-
-func getIPAMChain(ctx context.Context, cIDRs []string) networkservice.NetworkServiceServer {
-	var ipamchain []networkservice.NetworkServiceServer
-	for _, cidr := range cIDRs {
-		var parseErr error
-		_, ipNet, parseErr := net.ParseCIDR(strings.TrimSpace(cidr))
-		if parseErr != nil {
-			log.FromContext(ctx).Fatalf("Could not parse CIDR %s; %+v", cidr, parseErr)
-		}
-		ipamchain = append(ipamchain, singlepointipam.NewServer(ipNet))
-	}
-	return chain.NewNetworkServiceServer(ipamchain...)
 }
