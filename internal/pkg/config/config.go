@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 Nordix Foundation.
 //
+// Copyright (c) 2023 Cisco and/or its affiliates.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,6 +48,7 @@ type Config struct {
 	RegisterService        bool            `default:"true" desc:"if true then registers network service on startup" split_words:"true"`
 	ListenOn               url.URL         `default:"tcp://:5003" desc:"tcp:// url to be listen on. It will be used as public to register NSM" split_words:"true"`
 	OpenTelemetryEndpoint  string          `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
+	MetricsExportInterval  time.Duration   `default:"10s" desc:"interval between mertics exports" split_words:"true"`
 	LogLevel               string          `default:"INFO" desc:"Log level" split_words:"true"`
 	Services               []ServiceConfig `default:"" desc:"list of supported services"`
 }
