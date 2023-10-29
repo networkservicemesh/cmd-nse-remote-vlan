@@ -11,8 +11,7 @@ This repo contains 'nse-remote-vlan' an NSE application for Network Service Mesh
 * NSM_NAME                  Name of the endpoint
 * NSM_CONNECT_TO            An URL of registry service to connect to
 * NSM_MAX_TOKEN_LIFETIME    Maximum lifetime of tokens
-* NSM_CIDR_PREFIX           CIDR Prefix to assign IPs from
-* NSM_IPV6_PREFIX           Ipv6 Prefix for dual-stack
+* NSM_CIDR_PREFIX           CIDR Prefix or IP range(s) to assign IPs from (IPv4 and/or IPv6)
 * NSM_REGISTER_SERVICE      if true then registers network service on startup
 * NSM_LISTEN_ON             tcp:// url to be listen on. It will be used as public to register NSM
 * NSM_SERVICES              List of supported services
