@@ -1,5 +1,5 @@
-// Copyright (c) 2021-2022 Doc.ai and/or its affiliates.
-// Copyright (c) 2021-2022 Nordix and/or its affiliates.
+// Copyright (c) 2021-2023 Doc.ai and/or its affiliates.
+// Copyright (c) 2021-2023 Nordix and/or its affiliates.
 //
 // Copyright (c) 2023 Cisco and/or its affiliates.
 //
@@ -28,7 +28,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -50,7 +49,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/recvfd"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/sendfd"
-	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
+	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/groupipam"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/singlepointipam"
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	registryauthorize "github.com/networkservicemesh/sdk/pkg/registry/common/authorize"
@@ -99,10 +98,9 @@ func main() {
 	logger.Infof("the phases include:")
 	logger.Infof("1: get config from environment")
 	logger.Infof("2: retrieve spiffe svid")
-	logger.Infof("3: parse network prefixes for ipam")
-	logger.Infof("4: create network service endpoint")
-	logger.Infof("5: create grpc server and register the server")
-	logger.Infof("6: register nse with nsm")
+	logger.Infof("3: create network service endpoint")
+	logger.Infof("4: create grpc server and register the server")
+	logger.Infof("5: register nse with nsm")
 	logger.Infof("a final success message with start time duration")
 	starttime := time.Now()
 
@@ -112,6 +110,10 @@ func main() {
 	cfg := new(config.Config)
 	if err := cfg.Process(); err != nil {
 		logrus.Fatal(err.Error())
+	}
+
+	if len(cfg.CidrPrefix) != 1 {
+		logrus.Fatal("Only one CIDR prefix group expected")
 	}
 
 	l, errLog := logrus.ParseLevel(cfg.LogLevel)
@@ -156,22 +158,14 @@ func main() {
 	tlsServerConfig.MinVersion = tls.VersionTLS12
 
 	// ********************************************************************************
-	log.FromContext(ctx).Infof("executing phase 3: parsing network prefixes for ipam")
-	// ********************************************************************************
-
-	ipamChain := getIPAMChain(ctx, cfg.CidrPrefix)
-
-	log.FromContext(ctx).Infof("network prefixes parsed successfully")
-
-	// ********************************************************************************
-	logger.Infof("executing phase 4: create network service endpoint")
+	logger.Infof("executing phase 3: create network service endpoint")
 	// ********************************************************************************
 	responderEndpoint := endpoint.NewServer(ctx,
 		spiffejwt.TokenGeneratorFunc(source, cfg.MaxTokenLifetime),
 		endpoint.WithName(cfg.Name),
 		endpoint.WithAuthorizeServer(authorize.NewServer()),
 		endpoint.WithAdditionalFunctionality(
-			ipamChain,
+			groupipam.NewServer(cfg.CidrPrefix, groupipam.WithCustomIPAMServer(singlepointipam.NewServer)),
 			recvfd.NewServer(),
 			mechanisms.NewServer(map[string]networkservice.NetworkServiceServer{
 				vlanmech.MECHANISM: vlanmapserver.NewServer(cfg),
@@ -179,7 +173,7 @@ func main() {
 			sendfd.NewServer()))
 
 	// ********************************************************************************
-	logger.Infof("executing phase 5: create grpc server and register the server")
+	logger.Infof("executing phase 4: create grpc server and register the server")
 	// ********************************************************************************
 	serverCreds := grpc.Creds(
 		grpcfd.TransportCredentials(
@@ -202,7 +196,7 @@ func main() {
 	logger.Infof("grpc server started")
 
 	// ********************************************************************************
-	logger.Infof("executing phase 6: register nse with nsm")
+	logger.Infof("executing phase 5: register nse with nsm")
 	// ********************************************************************************
 
 	clientOptions := append(
@@ -315,17 +309,4 @@ func genPublishableURL(listenOn *url.URL, logger log.Logger) *url.URL {
 		return listenOn
 	}
 	return listenonurl.GetPublicURL(addrs, listenOn)
-}
-
-func getIPAMChain(ctx context.Context, cIDRs []string) networkservice.NetworkServiceServer {
-	var ipamchain []networkservice.NetworkServiceServer
-	for _, cidr := range cIDRs {
-		var parseErr error
-		_, ipNet, parseErr := net.ParseCIDR(strings.TrimSpace(cidr))
-		if parseErr != nil {
-			log.FromContext(ctx).Fatalf("Could not parse CIDR %s; %+v", cidr, parseErr)
-		}
-		ipamchain = append(ipamchain, singlepointipam.NewServer(ipNet))
-	}
-	return chain.NewNetworkServiceServer(ipamchain...)
 }

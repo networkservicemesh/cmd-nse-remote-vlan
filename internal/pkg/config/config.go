@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 Nordix Foundation.
+// Copyright (c) 2021-2023 Nordix Foundation.
 //
 // Copyright (c) 2023 Cisco and/or its affiliates.
 //
@@ -27,6 +27,8 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
+
+	"github.com/networkservicemesh/sdk/pkg/tools/cidr"
 )
 
 const (
@@ -44,7 +46,7 @@ type Config struct {
 	ConnectTo              url.URL         `default:"nsm-registry-svc:5002" desc:"url of registry service to connect to" split_words:"true"`
 	MaxTokenLifetime       time.Duration   `default:"24h" desc:"maximum lifetime of tokens" split_words:"true"`
 	RegistryClientPolicies []string        `default:"etc/nsm/opa/common/.*.rego,etc/nsm/opa/registry/.*.rego,etc/nsm/opa/client/.*.rego" desc:"paths to files and directories that contain registry client policies" split_words:"true"`
-	CidrPrefix             []string        `default:"169.254.0.0/16" desc:"CIDR Prefix to assign IPs (IPv4 and/or IPv6) from" split_words:"true"`
+	CidrPrefix             cidr.Groups     `default:"169.254.0.0/16" desc:"CIDR Prefix to assign IPs (IPv4 and/or IPv6) from" split_words:"true"`
 	RegisterService        bool            `default:"true" desc:"if true then registers network service on startup" split_words:"true"`
 	ListenOn               url.URL         `default:"tcp://:5003" desc:"tcp:// url to be listen on. It will be used as public to register NSM" split_words:"true"`
 	OpenTelemetryEndpoint  string          `default:"otel-collector.observability.svc.cluster.local:4317" desc:"OpenTelemetry Collector Endpoint"`
