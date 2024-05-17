@@ -1,5 +1,8 @@
 // Copyright (c) 2021-2022 Doc.ai and/or its affiliates.
-// Copyright (c) 2021-2022 Nordix and/or its affiliates.
+//
+// Copyright (c) 2023 Cisco and/or its affiliates.
+//
+// Copyright (c) 2021-2024 Nordix Foundation.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,7 +50,7 @@ import (
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/recvfd"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/common/mechanisms/sendfd"
-	"github.com/networkservicemesh/sdk/pkg/networkservice/core/chain"
+	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/groupipam"
 	"github.com/networkservicemesh/sdk/pkg/networkservice/ipam/singlepointipam"
 	registryclient "github.com/networkservicemesh/sdk/pkg/registry/chains/client"
 	registryauthorize "github.com/networkservicemesh/sdk/pkg/registry/common/authorize"
@@ -96,10 +99,9 @@ func main() {
 	logger.Infof("the phases include:")
 	logger.Infof("1: get config from environment")
 	logger.Infof("2: retrieve spiffe svid")
-	logger.Infof("3: parse network prefixes for ipam")
-	logger.Infof("4: create network service endpoint")
-	logger.Infof("5: create grpc server and register the server")
-	logger.Infof("6: register nse with nsm")
+	logger.Infof("3: create network service endpoint")
+	logger.Infof("4: create grpc server and register the server")
+	logger.Infof("5: register nse with nsm")
 	logger.Infof("a final success message with start time duration")
 	starttime := time.Now()
 
@@ -125,7 +127,7 @@ func main() {
 	if opentelemetry.IsEnabled() {
 		collectorAddress := cfg.OpenTelemetryEndpoint
 		spanExporter := opentelemetry.InitSpanExporter(ctx, collectorAddress)
-		metricExporter := opentelemetry.InitMetricExporter(ctx, collectorAddress)
+		metricExporter := opentelemetry.InitOPTLMetricExporter(ctx, collectorAddress, cfg.MetricsExportInterval)
 		o := opentelemetry.Init(ctx, spanExporter, metricExporter, cfg.Name)
 		defer func() {
 			if err := o.Close(); err != nil {
@@ -162,13 +164,14 @@ func main() {
 
 	// ********************************************************************************
 	logger.Infof("executing phase 4: create network service endpoint")
+
 	// ********************************************************************************
 	responderEndpoint := endpoint.NewServer(ctx,
 		spiffejwt.TokenGeneratorFunc(source, cfg.MaxTokenLifetime),
 		endpoint.WithName(cfg.Name),
 		endpoint.WithAuthorizeServer(authorize.NewServer()),
 		endpoint.WithAdditionalFunctionality(
-			ipamChain,
+			groupipam.NewServer(cfg.CidrPrefix, groupipam.WithCustomIPAMServer(singlepointipam.NewServer)),
 			recvfd.NewServer(),
 			mechanisms.NewServer(map[string]networkservice.NetworkServiceServer{
 				vlanmech.MECHANISM: vlanmapserver.NewServer(cfg),
@@ -176,7 +179,7 @@ func main() {
 			sendfd.NewServer()))
 
 	// ********************************************************************************
-	logger.Infof("executing phase 5: create grpc server and register the server")
+	logger.Infof("executing phase 4: create grpc server and register the server")
 	// ********************************************************************************
 	serverCreds := grpc.Creds(
 		grpcfd.TransportCredentials(
@@ -199,7 +202,7 @@ func main() {
 	logger.Infof("grpc server started")
 
 	// ********************************************************************************
-	logger.Infof("executing phase 6: register nse with nsm")
+	logger.Infof("executing phase 5: register nse with nsm")
 	// ********************************************************************************
 
 	clientOptions := append(
@@ -322,3 +325,4 @@ func getIPAMChain(cIDRs []string) networkservice.NetworkServiceServer {
 	}
 	return chain.NewNetworkServiceServer(ipamchain...)
 }
+

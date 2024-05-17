@@ -7,18 +7,20 @@ on:
       - completed
     workflows:
       - "ci"
+    branches:
+      - release/*
 jobs:
   get-tag:
     name: Get tag
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && contains(github.event.workflow_run.head_branch, 'release/') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
       tag: ${{ steps.get-tag-step.outputs.tag }}
     steps:
       - name: Get tag
         run: |
           branch=${{github.event.workflow_run.head_branch}}
-          echo '::set-output name=tag::'${branch#release/}
+          echo tag=${branch#release/} >> $GITHUB_OUTPUT
         id: get-tag-step
 
   check-gomod-deps:
@@ -30,8 +32,6 @@ jobs:
   create-release:
     needs: [get-tag, check-gomod-deps]
     uses: networkservicemesh/.github/.github/workflows/release.yaml@main
-    with:
-      tag: ${{ needs.get-tag.outputs.tag }}
     secrets:
       token: ${{ secrets.NSM_BOT_GITHUB_TOKEN }}
 

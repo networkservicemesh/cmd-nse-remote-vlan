@@ -8,13 +8,18 @@ This repo contains 'nse-remote-vlan' an NSE application for Network Service Mesh
 
 `nse-remote-vlan` accept following environment variables:
 
-* NSM_NAME                  Name of the endpoint
-* NSM_CONNECT_TO            An URL of registry service to connect to
-* NSM_MAX_TOKEN_LIFETIME    Maximum lifetime of tokens
-* NSM_CIDR_PREFIX           CIDR Prefix or IP range(s) to assign IPs from (IPv4 and/or IPv6)
-* NSM_REGISTER_SERVICE      if true then registers network service on startup
-* NSM_LISTEN_ON             tcp:// url to be listen on. It will be used as public to register NSM
-* NSM_SERVICES              List of supported services
+* `NSM_NAME`                     - Name of the endpoint (default: "vlan-server")
+* `NSM_CONNECT_TO`               - url of registry service to connect to (default: "nsm-registry-svc:5002")
+* `NSM_MAX_TOKEN_LIFETIME`       - maximum lifetime of tokens (default: "24h")
+* `NSM_REGISTRY_CLIENT_POLICIES` - paths to files and directories that contain registry client policies (default: "etc/nsm/opa/common/.*.rego,etc/nsm/opa/registry/.*.rego,etc/nsm/opa/client/.*.rego")
+* `NSM_CIDR_PREFIX`              - CIDR Prefix to assign IPs (IPv4 and/or IPv6) from (default: "169.254.0.0/16")
+* `NSM_CIDR_PREFIX`              - CIDR Prefix or IP range(s) to assign IPs from (IPv4 and/or IPv6)
+* `NSM_REGISTER_SERVICE`         - if true then registers network service on startup (default: "true")
+* `NSM_LISTEN_ON`                - tcp:// url to be listen on. It will be used as public to register NSM (default: "tcp://:5003")
+* `NSM_OPEN_TELEMETRY_ENDPOINT`  - OpenTelemetry Collector Endpoint (default: "otel-collector.observability.svc.cluster.local:4317")
+* `NSM_METRICS_EXPORT_INTERVAL`  - interval between metrics exports (default: "10s")
+* `NSM_LOG_LEVEL`                - Log level (default: "INFO")
+* `NSM_SERVICES`                 - list of supported services
 
 ## Build
 
