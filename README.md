@@ -13,6 +13,7 @@ This repo contains 'nse-remote-vlan' an NSE application for Network Service Mesh
 * `NSM_MAX_TOKEN_LIFETIME`       - maximum lifetime of tokens (default: "24h")
 * `NSM_REGISTRY_CLIENT_POLICIES` - paths to files and directories that contain registry client policies (default: "etc/nsm/opa/common/.*.rego,etc/nsm/opa/registry/.*.rego,etc/nsm/opa/client/.*.rego")
 * `NSM_CIDR_PREFIX`              - CIDR Prefix to assign IPs (IPv4 and/or IPv6) from (default: "169.254.0.0/16")
+* `NSM_CIDR_PREFIX`              - CIDR Prefix or IP range(s) to assign IPs from (IPv4 and/or IPv6)
 * `NSM_REGISTER_SERVICE`         - if true then registers network service on startup (default: "true")
 * `NSM_LISTEN_ON`                - tcp:// url to be listen on. It will be used as public to register NSM (default: "tcp://:5003")
 * `NSM_OPEN_TELEMETRY_ENDPOINT`  - OpenTelemetry Collector Endpoint (default: "otel-collector.observability.svc.cluster.local:4317")
