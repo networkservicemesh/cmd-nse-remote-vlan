@@ -53,6 +53,8 @@ type Config struct {
 	MetricsExportInterval  time.Duration   `default:"10s" desc:"interval between metrics exports" split_words:"true"`
 	LogLevel               string          `default:"INFO" desc:"Log level" split_words:"true"`
 	Services               []ServiceConfig `default:"" desc:"list of supported services"`
+	PprofEnabled           bool            `default:"false" desc:"is pprof enabled" split_words:"true"`
+	PprofListenOn          string          `default:"localhost:6060" desc:"pprof URL to ListenAndServe" split_words:"true"`
 }
 
 // Process prints and processes env to config
