@@ -19,6 +19,8 @@ This repo contains 'nse-remote-vlan' an NSE application for Network Service Mesh
 * `NSM_METRICS_EXPORT_INTERVAL`  - interval between metrics exports (default: "10s")
 * `NSM_LOG_LEVEL`                - Log level (default: "INFO")
 * `NSM_SERVICES`                 - list of supported services
+* `NSM_PPROF_ENABLED`            - is pprof enabled (default: "false")
+* `NSM_PPROF_LISTEN_ON`          - pprof URL to ListenAndServe (default: "localhost:6060")
 
 ## Build
 
