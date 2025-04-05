@@ -167,7 +167,16 @@ func main() {
 	tlsServerConfig.MinVersion = tls.VersionTLS12
 
 	// ********************************************************************************
-	logger.Infof("executing phase 3: create network service endpoint")
+	log.FromContext(ctx).Infof("executing phase 3: parsing network prefixes for ipam")
+	// ********************************************************************************
+
+	ipamChain := getIPAMChain(cfg.CidrPrefix)
+
+	log.FromContext(ctx).Infof("network prefixes parsed successfully")
+
+	// ********************************************************************************
+	logger.Infof("executing phase 4: create network service endpoint")
+
 	// ********************************************************************************
 	responderEndpoint := endpoint.NewServer(ctx,
 		spiffejwt.TokenGeneratorFunc(source, cfg.MaxTokenLifetime),
@@ -319,3 +328,13 @@ func genPublishableURL(listenOn *url.URL, logger log.Logger) *url.URL {
 	}
 	return listenonurl.GetPublicURL(addrs, listenOn)
 }
+
+func getIPAMChain(cIDRs []string) networkservice.NetworkServiceServer {
+	var ipamchain []networkservice.NetworkServiceServer
+	ipamNets, _ := config.ParseCidr(cIDRs)
+	for _, ipamNet := range ipamNets {
+		ipamchain = append(ipamchain, singlepointipam.NewServer(ipamNet))
+	}
+	return chain.NewNetworkServiceServer(ipamchain...)
+}
+
