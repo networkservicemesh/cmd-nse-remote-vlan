@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Nordix Foundation.
+// Copyright (c) 2021-2022 Nordix Foundation.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,7 +27,7 @@ import (
 func TestServiceConfig_UnmarshalBinary(t *testing.T) {
 	cfg := new(config.ServiceConfig)
 
-	err := cfg.UnmarshalBinary([]byte("finance-bridge { domain: service-domain.2; vlan: 100; via: gw-1 }"))
+	err := cfg.UnmarshalBinary([]byte("finance-bridge { domain: service-domain.2; vlan: 100; via: gw-1 ; mtu: 1450 }"))
 	require.NoError(t, err)
 
 	require.Equal(t, &config.ServiceConfig{
@@ -35,6 +35,7 @@ func TestServiceConfig_UnmarshalBinary(t *testing.T) {
 		Domain:  "service-domain.2",
 		Via:     "gw-1",
 		VLANTag: 100,
+		MTU:     1450,
 	}, cfg)
 
 	err = cfg.UnmarshalBinary([]byte("finance-bridge { vlan: 200; via: service-domain.1 }"))
@@ -44,5 +45,6 @@ func TestServiceConfig_UnmarshalBinary(t *testing.T) {
 		Name:    "finance-bridge",
 		Via:     "service-domain.1",
 		VLANTag: 200,
+		MTU:     0,
 	}, cfg)
 }
