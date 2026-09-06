@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Nordix Foundation.
+// Copyright (c) 2021-2022 Nordix Foundation.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,8 +39,9 @@ type vlanMapServer struct {
 	entries map[string]*entry
 }
 type entry struct {
-	vlanTag int32
+	vlanTag uint32
 	via     string
+	mtu     uint32
 }
 
 // NewServer - creates a NetworkServiceServer that requests a vlan interface and populates the netns inode
@@ -54,6 +55,7 @@ func NewServer(cfg *config.Config) networkservice.NetworkServiceServer {
 		v.entries[service.Name] = &entry{
 			vlanTag: service.VLANTag,
 			via:     service.Via,
+			mtu:     service.MTU,
 		}
 	}
 	return v
@@ -68,7 +70,7 @@ func (v *vlanMapServer) Request(ctx context.Context, request *networkservice.Net
 	}
 
 	if mechanism := vlan.ToMechanism(conn.GetMechanism()); mechanism != nil {
-		mechanism.SetVlanID(uint32(entry.vlanTag))
+		mechanism.SetVlanID(entry.vlanTag)
 
 		conn.Labels = make(map[string]string, 1)
 		conn.Labels[viaLabel] = entry.via
@@ -76,7 +78,8 @@ func (v *vlanMapServer) Request(ctx context.Context, request *networkservice.Net
 	if request.GetConnection().GetContext() == nil {
 		request.GetConnection().Context = &networkservice.ConnectionContext{}
 	}
-	request.GetConnection().GetContext().MTU = 0
+	request.GetConnection().GetContext().MTU = entry.mtu
+
 	return next.Server(ctx).Request(ctx, request)
 }
 
